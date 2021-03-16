@@ -405,6 +405,7 @@ static void init(int argc_, const char **argv_)
 			if (strcmp(arg + 2, "quote") == 0)
 				i++;
 			continue;
+		case 'I':
 		case 'e':
 		case 'T':
 			i++;
