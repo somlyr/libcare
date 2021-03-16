@@ -1,0 +1,36 @@
+1. make the test case workspace
+    cd worksapce
+    #download nginx src file
+    curl -L https://github.com/nginx/nginx/archive/release-1.19.8.zip -o nginx-1.19.8.zip    
+    tar -xvf nginx-1.19.8.zip && mv nginx-1.19.8.zip nginx_org
+    tar -xvf nginx-1.19.8.zip && mv nginx-1.19.8.zip nginx_mod
+    #download livepatch src file
+    curl -L https://github.com/somlyr/libcare/archive/master.zip -o livepatch.zip
+    tar -xvf livepatch.zip
+    #build livepatch toolschain
+    make -C livepatch/src
+2. modify the nginx src file in nginx_mod and get patch for later usage
+    # patch example:
+    #    add "printf("------patched-----") to nginx/src/http/ngx_http_request.c:ngx_init_http_connection()
+    diff -uprN nginx_org nginx_mod >>test.patch
+3. build the livepatch for nginx
+    # configure ngx with livepatch cc
+    cd nginx_orig
+    KPATCH_STAGE=configure CC=../livepatch/src/libcare-cc ./auto/configure
+    cp ../test.patch .
+    ../livepatch/src/libcare-patch-make test.patch
+4. success building patch in nginx_orig/patchroot
+5. verify patch working
+    #run non-patched nginx
+    cd nginx_orig && make -p logs
+    ./lpmake/usr/local/nginx/sbin/nginx -g "daemon off;" -p . -c ./lpmake/usr/local/nginx/conf/nginx.conf
+    
+    #now try to connect 127.0.0.1:80 with telnet
+    #no temimal output display
+    
+    #try to patch it
+    ../livepatch/src/libcare-ctl patch -p $(pidof nginx) test.patch
+    
+    #now try to connect 127.0.0.1:80 with telnet
+    #"-----patched------"
+    
